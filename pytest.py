@@ -8,6 +8,7 @@
 
 import math
 import random
+import string
 
 def Sigmoid (input):
     output = 1/(1 + math.exp(-input)) 
@@ -26,7 +27,7 @@ class Neuron:
     def RandomWeights(self, count):
         self.weights = []
         for x in range (0, count):
-            self.weights.append(random.random())
+            self.weights.append(random.uniform(-2.5,2.5))
         
     def calculate(self, inputs):
         value = 0
@@ -43,19 +44,21 @@ class Layer:
         self.layerNeurons = neurons
         
     def CreateNeurons(self, count):
-        self.layerNeurons.append(Neuron())
+        self.layerNeurons = []
+        for x in range (0, count):
+            self.layerNeurons.append(Neuron())
         
     # Give Layer.Calculate a list of inputs!
     # The input should be a list of all of the previous layer's activations
     def Calculate(self, inputsPerNeuron):
-        for x in range (0, len(layerNeurons)):
+        for x in range (0, len(self.layerNeurons)):
             self.layerNeurons[x].calculate(inputsPerNeuron)
             
     def CalculateFromLayer(self, otherLayer):
         inputsPerNeuron = []
-        for x in range (0, len(otherLayer)):
-            inputsPerNeuron.append(otherLayer[x].activation)
-        Calculate(inputsPerNeuron)
+        for x in range (0, len(otherLayer.layerNeurons)):
+            inputsPerNeuron.append(otherLayer.layerNeurons[x].activation)
+        self.Calculate(inputsPerNeuron)
 
 
 
@@ -76,13 +79,11 @@ hid1Layer.CreateNeurons(8)
     
     
 # HIDDEN LAYER 2
-for x in range (0, 8):
-    hid2Layer.layerNeurons.append(Neuron())
+hid2Layer.CreateNeurons(8)
     
     
 # OUTPUT LAYER
-for x in range (0, 26):
-    outLayer.layerNeurons.append(Neuron())
+outLayer.CreateNeurons(26)
 
 
 # SET WEIGHTS
@@ -109,13 +110,40 @@ inLayer.layerNeurons[7].activation = 1
 
 
 # CALCULATE OUTPUT
-#hid1Layer.CalculateFromLayer(inLayer)
+hid1Layer.CalculateFromLayer(inLayer)
+hid2Layer.CalculateFromLayer(hid1Layer)
+outLayer.CalculateFromLayer(hid2Layer)
 
 
-print (inLayer.layerNeurons[0].weights)
-print (hid1Layer.layerNeurons[0].weights)
-print (hid2Layer.layerNeurons[0].weights)
-print (outLayer.layerNeurons[0].weights)
+print ("====================\nINPUT LAYER ACTIVATIONS\n==================")
+for x in range (0, 8):
+    print (x, ":", inLayer.layerNeurons[x].activation)
+
+print ("====================\nHIDDEN LAYER 1 ACTIVATIONS\n==================")
+for x in range (0, 8):
+    print (x, ":", hid1Layer.layerNeurons[x].activation)
+    
+print ("====================\nHIDDEN LAYER 2 ACTIVATIONS\n==================")
+for x in range (0, 8):
+    print (x, ":", hid2Layer.layerNeurons[x].activation)
+
+print ("====================\nOUT LAYER ACTIVATIONS\n==================")
+for x in range (0, 26):
+    print (x, ":", outLayer.layerNeurons[x].activation)
+
+
+# FIND HIGHEST OUTPUT
+# DETERMINE ITS PREDICTION FOR THE INPUT
+pos = 0
+posValue = 0
+for x in range (0, 26):
+    if (posValue < outLayer.layerNeurons[x].activation):
+        pos = x
+        posValue = outLayer.layerNeurons[x].activation
+
+
+print ("\n\n\n===================\nHIGHEST VALUE OUTPUT ACTIVATION:", pos)
+print ("LETTER VALUE:", string.ascii_uppercase[pos])
 
 
 print ("\nHello World!")
