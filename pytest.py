@@ -10,16 +10,17 @@ import math
 import random
 import string
 import binascii
+import copy
 
 def Sigmoid (input):
     output = 1/(1 + math.exp(-input)) 
     return output
 
 class Neuron:
-    activation = 0.0
     
     def __init__ (self):
         self.weights = []
+        self.activation = 0.0
     
     def SetWeights(self, inWeights):
         self.weights = inWeights
@@ -28,6 +29,7 @@ class Neuron:
         self.weights = []
         for x in range (0, count):
             self.weights.append(random.uniform(-2.5,2.5))
+        #print ("Reset Weights, generating new ones.", self.weights[0])
         
     def calculate(self, inputs):
         #print("CALCULATING")
@@ -37,14 +39,15 @@ class Neuron:
         self.activation = Sigmoid(value)
         return self.activation
         
-    def Mutate (self):
+    def MutateNeuron (self, min, max):
         for x in range (0, len(self.weights)):
-            self.weights[x] = self.weights[x] * random.uniform(-10.1, 10.1)
+            self.weights[x] = self.weights[x] * random.uniform(min, max)
     
 
 class Layer:
-    layerNeurons = []
     
+    def __init__ (self):
+        self.layerNeurons = []
     
     def AssignNeurons(self, neurons):
         self.layerNeurons = neurons
@@ -66,9 +69,14 @@ class Layer:
             inputsPerNeuron.append(otherLayer.layerNeurons[x].activation)
         self.Calculate(inputsPerNeuron)
         
-    def Mutate (self):
+    def Mutate (self, min, max):
         for x in range (0, len(self.layerNeurons)):
-            self.layerNeurons[x].Mutate()
+            self.layerNeurons[x].MutateNeuron(min, max)
+
+    # for each neuron, Randomize Weights passing the amount of weights needed
+    def RandomizeNeuronWeights (self, weightCount):
+        for x in range (0, len(self.layerNeurons)):
+            self.layerNeurons[x].RandomWeights(weightCount)
 
 
 class ANN:
@@ -83,19 +91,16 @@ class ANN:
         self.InitializeRandom()
     
     def SetParent (self, parent):
-        self.Clear()
-        self.layers = []
-        self.inLayer.layerNeurons = parent.inLayer.layerNeurons.copy()
-        self.hid1Layer.layerNeurons = parent.hid1Layer.layerNeurons.copy()
-        self.hid2Layer.layerNeurons = parent.hid2Layer.layerNeurons.copy()
-        self.outLayer.layerNeurons = parent.outLayer.layerNeurons.copy()
-        self.MutateANN()
-        
-    def MutateANN (self):
-        self.inLayer.Mutate()
-        self.hid1Layer.Mutate()
-        self.hid2Layer.Mutate()
-        self.outLayer.Mutate()
+        self.hid1Layer = copy.deepcopy(parent.hid1Layer)
+        self.hid2Layer = copy.deepcopy(parent.hid2Layer)
+        self.outLayer = copy.deepcopy(parent.outLayer)
+    
+    # THIS WORKS
+    def MutateANN (self, min, max):
+        #self.inLayer.Mutate()          # DON'T NEED TO MUTATE INPUT BC IT HAS NO WEIGHTS
+        self.hid1Layer.Mutate(min, max)
+        self.hid2Layer.Mutate(min, max)
+        self.outLayer.Mutate(min, max)
     
     # WARNING; DOES NOT REPLACE LAYERS ONCE CLEARING.
     # CLEARING AND CALCULATING WILL RETURN AN ERROR.
@@ -105,6 +110,7 @@ class ANN:
         self.hid1Layer = Layer()
         self.hid2Layer = Layer()
         self.outLayer = Layer()
+        self.InitializeLayers()
     
     def InitializeLayers (self):
         # INPUT LAYER
@@ -119,11 +125,9 @@ class ANN:
     
     def InitializeRandom (self):
         # SET RANDOM WEIGHTS
-        for x in range (0, 8):
-            self.hid1Layer.layerNeurons[x].RandomWeights(8)
-            self.hid2Layer.layerNeurons[x].RandomWeights(8)
-        for x in range (0, 26):
-            self.outLayer.layerNeurons[x].RandomWeights(8)   
+        self.hid1Layer.RandomizeNeuronWeights(8)
+        self.hid2Layer.RandomizeNeuronWeights(8)
+        self.outLayer.RandomizeNeuronWeights(8)
     
     def Display (self):
         print ("====================\nINPUT LAYER ACTIVATIONS\n==================")
@@ -182,6 +186,7 @@ class ANN:
     # TAKE LIST OF LETTERS, RUN THROUGH FOR EACH LETTER.
     def InputLetterList (self, letters, verbose):
         correct = 0
+        #print (self.hid1Layer.layerNeurons[0].activation)
         for x in range (0, len(letters)):
             self.InputLetter(letters[x])
             self.ANNCalculate()       
@@ -197,42 +202,58 @@ class ANN:
 
 
 
+def RunANNBatch (batchSize):
+    annieBall = []  
+    for x in range (0, batchSize):
+        annieBall.append(ANN())
+    acc = 0
+    avgAcc = 0
+    mostAcc = 0
+    mostAccPos = 0
+    
+    for x in range (0, 10):
+        acc = annieBall[x].InputLetterList(string.ascii_uppercase, False)
+        avgAcc += acc
+        if (acc > mostAcc):
+            mostAcc = acc
+            mostAccPos = x
+    
+
+    avgAcc = avgAcc/10
+    print ("Average Accuracy:", 100*avgAcc)
+    print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
 
 
+def SortANNs (annArray):
+    for x in range (0, len(annArray)):
+        
+
+RunANNBatch(10)
+
+
+"""
 #annie = ANN()
 #annie.InputLetter('B')
 #annie.InputLetter('C')
 #annie.Display()
 #annie.InputLetterList(['A','B','C'])
 #annie.InputLetterList(string.ascii_uppercase)
-
-annieBall = []
-
-for x in range (0, 10):
-    annieBall.append(ANN())
-
-acc = 0
-avgAcc = 0
-mostAcc = 0
-mostAccPos = 0
-
-annieBall[9].SetParent(annieBall[8])
-
-for x in range (0, 10):
-    acc = annieBall[x].InputLetterList(string.ascii_uppercase, True)
-    avgAcc += acc
-    if (acc > mostAcc):
-        mostAcc = acc
-        mostAccPos = x
-        
-avgAcc = avgAcc/10
-
-print ("Average Accuracy:", 100*avgAcc)
-print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
+"""
 
 
 
-
-
+"""
+# A GOOD EXAMPLE ON MUTATION WORKING AND STUFF, USE DEEPCOPY TO COPY CHILDREN
+Ann = ANN()
+Papa = ANN()
+print ("",Ann.hid1Layer.layerNeurons[0].weights[0])
+print ("",Papa.hid1Layer.layerNeurons[0].weights[0])
+Ann.SetParent(Papa)
+print ("\n",Ann.hid1Layer.layerNeurons[0].weights[0])
+print ("",Papa.hid1Layer.layerNeurons[0].weights[0])
+Ann.MutateANN()
+print ("\n",Ann.hid1Layer.layerNeurons[0].weights[0])
+print ("",Papa.hid1Layer.layerNeurons[0].weights[0])
+"""
 
 print ("\nHello World!")
