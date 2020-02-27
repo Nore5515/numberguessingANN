@@ -83,6 +83,7 @@ class ANN:
     
     def __init__ (self):
         self.layers = []
+        self.accuracy = 0.0
         self.inLayer = Layer()
         self.hid1Layer = Layer()
         self.hid2Layer = Layer()
@@ -213,6 +214,7 @@ def RunANNBatch (batchSize):
     
     for x in range (0, 10):
         acc = annieBall[x].InputLetterList(string.ascii_uppercase, False)
+        annieBall[x].accuracy = acc
         avgAcc += acc
         if (acc > mostAcc):
             mostAcc = acc
@@ -222,14 +224,38 @@ def RunANNBatch (batchSize):
     avgAcc = avgAcc/10
     print ("Average Accuracy:", 100*avgAcc)
     print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
+    return annieBall
 
-
+# SORT BY DOING THIS
+# TWO POINTERS, ONE AT START, TWO IMMEDIATELY AFTER ONE
+# COMPARE ONE AND TWO. IF TWO IS GREATER, SWAP, OTHERWISE, MOVE TWO UP BY ONE
+# REPEAT UNTIL TWO REACHES THE END OF THE LIST
+# REPEAT, BUT WITH ONE MOVED UP BY ONE.
+# REPEAT UNTIL ONE IS THE LAST ELEMENT IN THE LIST
 def SortANNs (annArray):
-    for x in range (0, len(annArray)):
+    one, two = 0, 1
+    temp = ANN()
+    while one < len(annArray):
+        while two < len(annArray):
+            if annArray[one].accuracy < annArray[two].accuracy:
+                temp = copy.deepcopy(annArray[one])
+                annArray[one] = annArray[two]
+                annArray[two] = temp
+            two += 1
+        one += 1
+        two = one + 1
         
 
-RunANNBatch(10)
 
+AyyNNs = RunANNBatch(10)
+
+
+for x in range (0, 10):
+    print (x, ": ", AyyNNs[x].accuracy, sep="")
+SortANNs(AyyNNs)
+print ()
+for x in range (0, 10):
+    print (x, ": ", AyyNNs[x].accuracy, sep="")
 
 """
 #annie = ANN()
