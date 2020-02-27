@@ -9,6 +9,7 @@
 import math
 import random
 import string
+import binascii
 
 def Sigmoid (input):
     output = 1/(1 + math.exp(-input)) 
@@ -16,10 +17,9 @@ def Sigmoid (input):
 
 class Neuron:
     activation = 0.0
-    weights = []
     
     def __init__ (self):
-        pass
+        self.weights = []
     
     def SetWeights(self, inWeights):
         self.weights = inWeights
@@ -30,15 +30,21 @@ class Neuron:
             self.weights.append(random.uniform(-2.5,2.5))
         
     def calculate(self, inputs):
+        #print("CALCULATING")
         value = 0
         for x in range (0, len(inputs)):
             value += inputs[x]*self.weights[x]
         self.activation = Sigmoid(value)
         return self.activation
+        
+    def Mutate (self):
+        for x in range (0, len(self.weights)):
+            self.weights[x] = self.weights[x] * random.uniform(-10.1, 10.1)
     
 
 class Layer:
     layerNeurons = []
+    
     
     def AssignNeurons(self, neurons):
         self.layerNeurons = neurons
@@ -59,99 +65,174 @@ class Layer:
         for x in range (0, len(otherLayer.layerNeurons)):
             inputsPerNeuron.append(otherLayer.layerNeurons[x].activation)
         self.Calculate(inputsPerNeuron)
+        
+    def Mutate (self):
+        for x in range (0, len(self.layerNeurons)):
+            self.layerNeurons[x].Mutate()
 
 
-
-inLayer = Layer()
-hid1Layer = Layer()
-hid2Layer = Layer()
-outLayer = Layer()
-
-
-
-# INPUT LAYER
-# NOTE; DOES NOT NEED WEIGHTS
-inLayer.CreateNeurons(8)
-
-
-# HIDDEN LAYER 1
-hid1Layer.CreateNeurons(8)
+class ANN:
     
+    def __init__ (self):
+        self.layers = []
+        self.inLayer = Layer()
+        self.hid1Layer = Layer()
+        self.hid2Layer = Layer()
+        self.outLayer = Layer()
+        self.InitializeLayers()
+        self.InitializeRandom()
     
-# HIDDEN LAYER 2
-hid2Layer.CreateNeurons(8)
+    def SetParent (self, parent):
+        self.Clear()
+        self.layers = []
+        self.inLayer.layerNeurons = parent.inLayer.layerNeurons.copy()
+        self.hid1Layer.layerNeurons = parent.hid1Layer.layerNeurons.copy()
+        self.hid2Layer.layerNeurons = parent.hid2Layer.layerNeurons.copy()
+        self.outLayer.layerNeurons = parent.outLayer.layerNeurons.copy()
+        self.MutateANN()
+        
+    def MutateANN (self):
+        self.inLayer.Mutate()
+        self.hid1Layer.Mutate()
+        self.hid2Layer.Mutate()
+        self.outLayer.Mutate()
     
+    # WARNING; DOES NOT REPLACE LAYERS ONCE CLEARING.
+    # CLEARING AND CALCULATING WILL RETURN AN ERROR.
+    def Clear (self):
+        self.layers = []
+        self.inLayer = Layer()
+        self.hid1Layer = Layer()
+        self.hid2Layer = Layer()
+        self.outLayer = Layer()
     
-# OUTPUT LAYER
-outLayer.CreateNeurons(26)
-
-
-# SET WEIGHTS
-for x in range (0, 8):
-    hid1Layer.layerNeurons[x].RandomWeights(8)
-    hid2Layer.layerNeurons[x].RandomWeights(8)
-for x in range (0, 26):
-    outLayer.layerNeurons[x].RandomWeights(8)
-
-
-
-
-# DESIGNATE INPUT HERE
-# RIGHT NOW USING MANUAL ASSIGNMENT
-# INPUT SHOULD BE inLayer's ACTIVATION VALUES
-inLayer.layerNeurons[0].activation = 0
-inLayer.layerNeurons[1].activation = 1
-inLayer.layerNeurons[2].activation = 1
-inLayer.layerNeurons[3].activation = 0
-inLayer.layerNeurons[4].activation = 0
-inLayer.layerNeurons[5].activation = 0
-inLayer.layerNeurons[6].activation = 0
-inLayer.layerNeurons[7].activation = 1
-
-
-# CALCULATE OUTPUT
-hid1Layer.CalculateFromLayer(inLayer)
-hid2Layer.CalculateFromLayer(hid1Layer)
-outLayer.CalculateFromLayer(hid2Layer)
-
-
-print ("====================\nINPUT LAYER ACTIVATIONS\n==================")
-for x in range (0, 8):
-    print (x, ":", inLayer.layerNeurons[x].activation)
-
-print ("====================\nHIDDEN LAYER 1 ACTIVATIONS\n==================")
-for x in range (0, 8):
-    print (x, ":", hid1Layer.layerNeurons[x].activation)
+    def InitializeLayers (self):
+        # INPUT LAYER
+        # NOTE; DOES NOT NEED WEIGHTS
+        self.inLayer.CreateNeurons(8)
+        # HIDDEN LAYER 1
+        self.hid1Layer.CreateNeurons(8)           
+        # HIDDEN LAYER 2
+        self.hid2Layer.CreateNeurons(8)            
+        # OUTPUT LAYER
+        self.outLayer.CreateNeurons(26)    
     
-print ("====================\nHIDDEN LAYER 2 ACTIVATIONS\n==================")
-for x in range (0, 8):
-    print (x, ":", hid2Layer.layerNeurons[x].activation)
+    def InitializeRandom (self):
+        # SET RANDOM WEIGHTS
+        for x in range (0, 8):
+            self.hid1Layer.layerNeurons[x].RandomWeights(8)
+            self.hid2Layer.layerNeurons[x].RandomWeights(8)
+        for x in range (0, 26):
+            self.outLayer.layerNeurons[x].RandomWeights(8)   
+    
+    def Display (self):
+        print ("====================\nINPUT LAYER ACTIVATIONS\n==================")
+        for x in range (0, 8):
+            print (x, ":", self.inLayer.layerNeurons[x].activation)
+        print ("====================\nHIDDEN LAYER 1 ACTIVATIONS\n==================")
+        for x in range (0, 8):
+            print (x, ":", self.hid1Layer.layerNeurons[x].activation)   
+        print ("====================\nHIDDEN LAYER 2 ACTIVATIONS\n==================")
+        for x in range (0, 8):
+            print (x, ":", self.hid2Layer.layerNeurons[x].activation)
+        print ("====================\nOUT LAYER ACTIVATIONS\n==================")
+        for x in range (0, 26):
+            print (x, ":", self.outLayer.layerNeurons[x].activation)
+        # FIND HIGHEST OUTPUT
+        # DETERMINE ITS PREDICTION FOR THE INPUT
+        pos = 0
+        posValue = 0
+        for x in range (0, 26):
+            if (posValue < self.outLayer.layerNeurons[x].activation):
+                pos = x
+                posValue = self.outLayer.layerNeurons[x].activation
+        print ("\n\n\n===================\nHIGHEST VALUE OUTPUT ACTIVATION:", pos)
+        print ("LETTER VALUE:", string.ascii_uppercase[pos])
+    
+    # RETURNS THE PREDICTED LETTER OF THE CURRENT INPUT THE ANN HAS
+    def GetPrediction (self):
+        # FIND HIGHEST OUTPUT
+        # DETERMINE ITS PREDICTION FOR THE INPUT
+        pos = 0
+        posValue = 0
+        for x in range (0, 26):
+            if (posValue < self.outLayer.layerNeurons[x].activation):
+                pos = x
+                posValue = self.outLayer.layerNeurons[x].activation    
+        return string.ascii_uppercase[pos]
+    
+    # TURN LETTER TO BINARY ARRAY, FEED INTO INPUT ARRAY
+    def InputLetter (self, letter):
+        # LINE I STOLE FROM ONLINE THAT CONVERTS THE LETTER INTO ITS BINARY FORM IN A STRING
+        binary = ' '.join(format(ord(x), 'b') for x in letter)
+        outBin = [0.0]
+        # CONVERT THE STRING TO AN ARRAY OF FLOATS
+        for x in range (0, 7):
+            outBin.append(float(binary[x]))
+        # FILL INPUT ARRAY
+        for x in range (0, 8):
+            self.inLayer.layerNeurons[x].activation = outBin[x]
+    
+    # CALCULATE ANN'S LAYERS
+    def ANNCalculate (self):
+        self.hid1Layer.CalculateFromLayer(self.inLayer)
+        self.hid2Layer.CalculateFromLayer(self.hid1Layer)
+        self.outLayer.CalculateFromLayer(self.hid2Layer)    
+    
+    # TAKE LIST OF LETTERS, RUN THROUGH FOR EACH LETTER.
+    def InputLetterList (self, letters, verbose):
+        correct = 0
+        for x in range (0, len(letters)):
+            self.InputLetter(letters[x])
+            self.ANNCalculate()       
+            if (verbose):
+                print ("TEST ",x,":   GIVEN[",letters[x],"], PREDICTED[",self.GetPrediction(),"]", sep='')
+            if (letters[x] == self.GetPrediction()):
+                correct += 1
+        if (verbose):        
+            print ("\nIt got", correct, "correct.")
+            print ("====================\nACCURACY:",100 * (correct/len(letters)),"\n====================")
+        return (correct/len(letters))
 
-print ("====================\nOUT LAYER ACTIVATIONS\n==================")
-for x in range (0, 26):
-    print (x, ":", outLayer.layerNeurons[x].activation)
 
 
-# FIND HIGHEST OUTPUT
-# DETERMINE ITS PREDICTION FOR THE INPUT
-pos = 0
-posValue = 0
-for x in range (0, 26):
-    if (posValue < outLayer.layerNeurons[x].activation):
-        pos = x
-        posValue = outLayer.layerNeurons[x].activation
 
 
-print ("\n\n\n===================\nHIGHEST VALUE OUTPUT ACTIVATION:", pos)
-print ("LETTER VALUE:", string.ascii_uppercase[pos])
+
+#annie = ANN()
+#annie.InputLetter('B')
+#annie.InputLetter('C')
+#annie.Display()
+#annie.InputLetterList(['A','B','C'])
+#annie.InputLetterList(string.ascii_uppercase)
+
+annieBall = []
+
+for x in range (0, 10):
+    annieBall.append(ANN())
+
+acc = 0
+avgAcc = 0
+mostAcc = 0
+mostAccPos = 0
+
+annieBall[9].SetParent(annieBall[8])
+
+for x in range (0, 10):
+    acc = annieBall[x].InputLetterList(string.ascii_uppercase, True)
+    avgAcc += acc
+    if (acc > mostAcc):
+        mostAcc = acc
+        mostAccPos = x
+        
+avgAcc = avgAcc/10
+
+print ("Average Accuracy:", 100*avgAcc)
+print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
+
+
+
+
 
 
 print ("\nHello World!")
-
-
-"""
-
-for x in range (0, 8):
-    hid2Layer.layerNeurons.append(Neuron())
-    
-    """
