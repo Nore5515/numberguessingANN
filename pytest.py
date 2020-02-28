@@ -79,16 +79,27 @@ class Layer:
             self.layerNeurons[x].RandomWeights(weightCount)
 
 
+########################################################################################################################################################
+########################################################################################################################################################
+#^ LAYER CLASS
+#
+#v ANN CLASS
+########################################################################################################################################################
+########################################################################################################################################################
+
+# TIDY UP TO MAKE MORE USER FRIENDLY
+# RIGHT NOW MANUALLY SETTING A LOT OF THINGS
 class ANN:
     
     def __init__ (self):
         self.layers = []
         self.accuracy = 0.0
+        self.accuracyCount = 0
         self.inLayer = Layer()
         self.hid1Layer = Layer()
         self.hid2Layer = Layer()
         self.outLayer = Layer()
-        self.InitializeLayers()
+        self.InitializeLayers(10)
         self.InitializeRandom()
     
     def SetParent (self, parent):
@@ -111,38 +122,38 @@ class ANN:
         self.hid1Layer = Layer()
         self.hid2Layer = Layer()
         self.outLayer = Layer()
-        self.InitializeLayers()
+        self.InitializeLayers(10)
     
-    def InitializeLayers (self):
+    def InitializeLayers (self, neuronsPerLayer):
         # INPUT LAYER
         # NOTE; DOES NOT NEED WEIGHTS
         self.inLayer.CreateNeurons(8)
         # HIDDEN LAYER 1
-        self.hid1Layer.CreateNeurons(8)           
+        self.hid1Layer.CreateNeurons(neuronsPerLayer)           
         # HIDDEN LAYER 2
-        self.hid2Layer.CreateNeurons(8)            
+        self.hid2Layer.CreateNeurons(neuronsPerLayer)            
         # OUTPUT LAYER
         self.outLayer.CreateNeurons(26)    
     
     def InitializeRandom (self):
         # SET RANDOM WEIGHTS
-        self.hid1Layer.RandomizeNeuronWeights(8)
-        self.hid2Layer.RandomizeNeuronWeights(8)
-        self.outLayer.RandomizeNeuronWeights(8)
+        self.hid1Layer.RandomizeNeuronWeights(len(self.hid1Layer.layerNeurons))
+        self.hid2Layer.RandomizeNeuronWeights(len(self.hid1Layer.layerNeurons))
+        self.outLayer.RandomizeNeuronWeights(26)
     
     def Display (self):
         print ("====================\nINPUT LAYER ACTIVATIONS\n==================")
-        for x in range (0, 8):
-            print (x, ":", self.inLayer.layerNeurons[x].activation)
+        for x in range (0, len(self.inLayer.layerNeurons)):
+            print (x, ":", round(self.inLayer.layerNeurons[x].activation,3))
         print ("====================\nHIDDEN LAYER 1 ACTIVATIONS\n==================")
-        for x in range (0, 8):
-            print (x, ":", self.hid1Layer.layerNeurons[x].activation)   
+        for x in range (0, len(self.hid1Layer.layerNeurons)):
+            print (x, ":",  round(self.hid1Layer.layerNeurons[x].activation,3))   
         print ("====================\nHIDDEN LAYER 2 ACTIVATIONS\n==================")
-        for x in range (0, 8):
-            print (x, ":", self.hid2Layer.layerNeurons[x].activation)
+        for x in range (0, len(self.hid2Layer.layerNeurons)):
+            print (x, ":",  round(self.hid2Layer.layerNeurons[x].activation,3))
         print ("====================\nOUT LAYER ACTIVATIONS\n==================")
         for x in range (0, 26):
-            print (x, ":", self.outLayer.layerNeurons[x].activation)
+            print (x, ":",  round(self.outLayer.layerNeurons[x].activation,3))
         # FIND HIGHEST OUTPUT
         # DETERMINE ITS PREDICTION FOR THE INPUT
         pos = 0
@@ -193,16 +204,43 @@ class ANN:
             self.ANNCalculate()       
             if (verbose):
                 print ("TEST ",x,":   GIVEN[",letters[x],"], PREDICTED[",self.GetPrediction(),"]", sep='')
-            if (letters[x] == self.GetPrediction()):
-                correct += 1
+            correct += self.CheckGuess (letters[x], self.GetPrediction())
+            #if (letters[x] == self.GetPrediction()):
+                #correct += CheckGuess(
         if (verbose):        
             print ("\nIt got", correct, "correct.")
             print ("====================\nACCURACY:",100 * (correct/len(letters)),"\n====================")
         return (correct/len(letters))
 
+    def CheckGuess (self, correct, prediction):
+        binaryCorrect = ' '.join(format(ord(x), 'b') for x in correct)
+        binaryPrediction = ' '.join(format(ord(x), 'b') for x in prediction)
+        counter = 0
+        
+        for x in range (0, len(binaryCorrect)):
+            if (binaryCorrect[x] == binaryPrediction[x]):
+                counter += 1
+        
+        return counter / len(binaryCorrect)
+
+    def Prettify (self):
+        sendOut = "ANN WITH HID1[0].WEIGHT[0] OF: "
+        sendOut += str(self.hid1Layer.layerNeurons[0].weights[0])
+        #self.Display()
+        return sendOut
+        
+    #def CorrectCount (self):
+        
 
 
 
+class ANNManager:
+    
+    def __init__ (self):
+        anns = []
+
+
+# CREATES NEW BATCH OF ANNS OF SIZE BATCHSIZE
 def RunANNBatch (batchSize):
     annieBall = []  
     for x in range (0, batchSize):
@@ -210,21 +248,52 @@ def RunANNBatch (batchSize):
     acc = 0
     avgAcc = 0
     mostAcc = 0
-    mostAccPos = 0
-    
-    for x in range (0, 10):
+    mostAccPos = 0    
+    for x in range (0, len(annieBall)):
         acc = annieBall[x].InputLetterList(string.ascii_uppercase, False)
         annieBall[x].accuracy = acc
         avgAcc += acc
         if (acc > mostAcc):
             mostAcc = acc
-            mostAccPos = x
+            mostAccPos = x 
+    avgAcc = avgAcc/len(annieBall)
+    #print ("Average Accuracy:", 100*avgAcc)
+    #print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
+    return annieBall
     
 
+# JUST RUNS A BUNCH OF ANNS    
+def RunANN (anns):
+    acc = 0
+    avgAcc = 0
+    mostAcc = 0
+    mostAccPos = 0    
+    for x in range (0, 10):
+        acc = anns[x].InputLetterList(string.ascii_uppercase, False)
+        anns[x].accuracy = acc 
+        avgAcc += acc
+        if (acc > mostAcc):
+            mostAcc = acc
+            mostAccPos = x 
     avgAcc = avgAcc/10
-    print ("Average Accuracy:", 100*avgAcc)
-    print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
-    return annieBall
+    #print ("Average Accuracy:", 100*avgAcc)
+    #print ("Most Accurate:", 100*mostAcc, "at", mostAccPos)
+
+# JUST GET ACCURACY DONT RUN THE WHOLE THING OVER AGAIN PLEASE
+def DisplayANNs (anns):
+    acc = 0
+    avgAcc = 0
+    mostAcc = 0
+    mostAccPos = 0    
+    for x in range (0, len(anns)):
+        acc = anns[x].InputLetterList(string.ascii_uppercase, False)
+        anns[x].accuracy = acc
+        avgAcc += acc
+        if (acc > mostAcc):
+            mostAcc = acc
+            mostAccPos = x 
+    avgAcc = avgAcc/len(anns)
+    print ("Average Accuracy:", 100*avgAcc, "\t\tMost Accurate:", 100*mostAcc, "at", mostAccPos)
 
 # SORT BY DOING THIS
 # TWO POINTERS, ONE AT START, TWO IMMEDIATELY AFTER ONE
@@ -244,18 +313,65 @@ def SortANNs (annArray):
             two += 1
         one += 1
         two = one + 1
-        
+    
+# ONLY GIVE SORTED LISTS
+# make this a number between 0 and 1
+def CullANNs (anns, survivalPercentage):
+    survivors = []
+    for x in range (0, round(len(anns)*survivalPercentage)):
+        survivors.append(anns[x])
+    return survivors
+
+def RepopulateANNs (anns, size):
+    population = []
+    counter = 0
+    temp = ANN()
+    for x in range (0, len(anns)):
+        population.append(anns[x])
+    for x in range (0, size - len(anns)):
+        #population.append(ANN())
+        temp = copy.deepcopy(anns[counter])
+        temp.MutateANN(0.8,1.2)
+        counter += 1
+        if (counter >= len(anns)):
+            counter = 0
+            temp.MutateANN (0.8,1.2)
+        population.append(temp)
+    return population
 
 
-AyyNNs = RunANNBatch(10)
+AyyNNs = RunANNBatch(12)
 
-
-for x in range (0, 10):
-    print (x, ": ", AyyNNs[x].accuracy, sep="")
 SortANNs(AyyNNs)
-print ()
-for x in range (0, 10):
-    print (x, ": ", AyyNNs[x].accuracy, sep="")
+#for x in range (0, 12):
+    #print (x, ": ", AyyNNs[x].accuracy, sep="")
+
+AyyNNs = CullANNs (AyyNNs, 0.25)
+#print (len(AyyNNs))
+AyyNNs = RepopulateANNs (AyyNNs, 12)
+#print ("\n\n")
+RunANN(AyyNNs)
+
+SortANNs(AyyNNs)
+#for x in range (0, 12):
+    #print (x, ": ", AyyNNs[x].accuracy, sep="")
+
+for y in range (0, 1000):
+    SortANNs(AyyNNs)
+    AyyNNs = CullANNs (AyyNNs, 0.3)
+    AyyNNs = RepopulateANNs (AyyNNs, 12)
+    RunANN(AyyNNs)
+    if (y % 10 == 0):
+        DisplayANNs(AyyNNs)
+    
+    
+#DisplayANNs(AyyNNs)
+ANNManager()
+
+for x in range (0, len (AyyNNs)):
+    print (AyyNNs[x].Prettify())
+
+
 
 """
 #annie = ANN()
@@ -264,11 +380,6 @@ for x in range (0, 10):
 #annie.Display()
 #annie.InputLetterList(['A','B','C'])
 #annie.InputLetterList(string.ascii_uppercase)
-"""
-
-
-
-"""
 # A GOOD EXAMPLE ON MUTATION WORKING AND STUFF, USE DEEPCOPY TO COPY CHILDREN
 Ann = ANN()
 Papa = ANN()
